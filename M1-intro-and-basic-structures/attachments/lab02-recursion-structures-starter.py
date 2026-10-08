@@ -58,45 +58,46 @@ REPEATS = 5  # повторов на точку (берётся медиана)
 
 CALLS = {"fib_naive": 0, "fib_memo": 0}  # счётчики рекурсивных вызовов
 
-
 def factorial(n: int) -> int:
-    """Факториал n >= 0 рекурсивно. Ожидаемая сложность: TODO (обосновать в отчёте)."""
-    # TODO: базовое условие + рекурсивный переход
-    raise NotImplementedError
-
+    if n < 0:
+        raise ValueError("n должно быть неотрицательным")
+    if n <= 1:
+        return 1
+    return n * factorial(n - 1)
 
 def fib_naive(n: int) -> int:
-    """n-е число Фибоначчи наивной рекурсией; увеличивает CALLS["fib_naive"].
-
-    Ожидаемая сложность: TODO (экспоненциальная — показать счётчиком вызовов).
-    """
+    if n < 0:
+        raise ValueError("n должно быть неотрицательным")
     CALLS["fib_naive"] += 1
-    # TODO: F(0)=0, F(1)=1, далее F(n)=F(n-1)+F(n-2)
-    raise NotImplementedError
-
+    if n <= 1:
+        return n
+    return fib_naive(n - 1) + fib_naive(n - 2)
 
 def fib_memo(n: int, memo: dict[int, int] | None = None) -> int:
-    """n-е число Фибоначчи с мемоизацией; увеличивает CALLS["fib_memo"].
-
-    Ожидаемая сложность: TODO (линейная — сравнить счётчики в отчёте).
-    """
+    if n < 0:
+        raise ValueError("n должно быть неотрицательным")
+    if memo is None:
+        memo = {}
     CALLS["fib_memo"] += 1
-    # TODO: словарь memo передаётся по рекурсии; повторные подзадачи не пересчитываются
-    raise NotImplementedError
-
+    if n <= 1:
+        return n
+    if n not in memo:
+        memo[n] = fib_memo(n - 1, memo) + fib_memo(n - 2, memo)
+    return memo[n]
 
 def hanoi(n: int, src: str = "A", dst: str = "C", aux: str = "B",
           moves: list[tuple[str, str]] | None = None) -> int:
-    """Ханойские башни: перенести n дисков со стержня src на dst, вернуть число перемещений.
-
-    Если передан список moves, каждое перемещение верхнего диска дописывается
-    в него парой (откуда, куда). self_check проигрывает эти ходы и проверяет,
-    что больший диск ни разу не кладётся на меньший, все диски оказываются
-    на dst, а число перемещений равно 2**n - 1.
-    """
-    # TODO: базовое условие n == 0; иначе перенести n-1 на aux, 1 на dst, n-1 на dst
-    # (moves передаётся во все рекурсивные вызовы)
-    raise NotImplementedError
+    if n < 0:
+        raise ValueError("n должно быть неотрицательным")
+    if moves is None:
+        moves = []
+    if n == 0:
+        return 0
+    count = hanoi(n - 1, src, aux, dst, moves)
+    moves.append((src, dst))
+    count += 1
+    count += hanoi(n - 1, aux, dst, src, moves)
+    return count
 
 
 # ---------------------------------------------------------------------------
@@ -128,41 +129,39 @@ class DynamicArray:
         return self._capacity
 
     def _grow(self) -> None:
-        """Увеличить ёмкость в 2 раза и скопировать элементы в новый буфер."""
-        # TODO: выделить новый буфер размера 2 * capacity, перенести _size элементов,
-        # увеличить self.copies на число перенесённых элементов
-        raise NotImplementedError
+        new_capacity = self._capacity * 2
+        new_buffer = [None] * new_capacity
+        for i in range(self._size):
+            new_buffer[i] = self._buffer[i]
+            self.copies += 1
+        self._buffer = new_buffer
+        self._capacity = new_capacity
 
     def append(self, value) -> None:
-        """Добавить элемент в конец; при size == capacity сначала вызвать _grow.
+        if self._size == self._capacity:
+            self._grow()
+        self._buffer[self._size] = value
+        self._size += 1
 
-        Амортизированная сложность: TODO (обосновать методом учёта в отчёте).
-        """
-        # TODO: рост при необходимости, запись в ячейку _buffer[_size], инкремент _size
-        raise NotImplementedError
 
     def pop(self):
-        """Удалить и вернуть последний элемент; для пустого массива — IndexError.
+        if self._size == 0:
+            raise IndexError("pop из пустого массива")
+        self._size -= 1
+        value = self._buffer[self._size]
+        self._buffer[self._size] = None
+        return value
 
-        Сжатие буфера необязательно. Если реализуете его, уменьшайте ёмкость
-        вдвое, когда size опускается до capacity // 4, и не ниже
-        INITIAL_CAPACITY (перенесённые элементы тоже учитываются в copies):
-        сжатие уже при заполнении на ½ даёт Θ(n) на операцию, если чередовать
-        append и pop на границе ёмкости.
-        """
-        # TODO: проверка на пустоту, чтение _buffer[_size - 1], очистка ячейки
-        # (None — чтобы буфер не удерживал объект), декремент _size
-        raise NotImplementedError
 
     def get(self, index: int):
-        """Вернуть элемент по индексу 0 <= index < size; иначе IndexError."""
-        # TODO: проверка границ (включая отрицательные индексы) + чтение из буфера
-        raise NotImplementedError
+        if index < 0 or index >= self._size:
+            raise IndexError("индекс вне границ массива")
+        return self._buffer[index]
 
     def set(self, index: int, value) -> None:
-        """Записать элемент по индексу 0 <= index < size; иначе IndexError."""
-        # TODO: проверка границ + запись в буфер
-        raise NotImplementedError
+        if index < 0 or index >= self._size:
+            raise IndexError("индекс вне границ массива")
+        self._buffer[index] = value
 
 
 # ---------------------------------------------------------------------------
@@ -171,7 +170,6 @@ class DynamicArray:
 
 
 class Stack:
-    """Стек (LIFO) на базе DynamicArray — только через его публичный интерфейс."""
 
     def __init__(self) -> None:
         self._data = DynamicArray()
@@ -180,20 +178,15 @@ class Stack:
         return len(self._data)
 
     def push(self, value) -> None:
-        """Положить элемент на вершину. Амортизированная сложность: TODO."""
-        # TODO: делегировать DynamicArray.append
-        raise NotImplementedError
+        self._data.append(value)
 
     def pop(self):
-        """Снять элемент с вершины; для пустого стека — IndexError."""
-        # TODO: делегировать DynamicArray.pop
-        raise NotImplementedError
+        return self._data.pop()
 
     def peek(self):
-        """Вернуть вершину без удаления; для пустого стека — IndexError."""
-        # TODO: для пустого стека — IndexError с понятным сообщением,
-        # иначе DynamicArray.get(len - 1)
-        raise NotImplementedError
+        if len(self._data) == 0:
+            raise IndexError("peek из пустого стека")
+        return self._data.get(len(self._data) - 1)
 
 
 class _Node:
@@ -223,24 +216,48 @@ class Deque:
         return self._size
 
     def push_front(self, value) -> None:
-        """Добавить элемент в начало. Сложность: TODO."""
-        # TODO: создать узел, перевязать ссылки head (учесть пустой дек)
-        raise NotImplementedError
+        node = _Node(value, None, self._head)
+        if self._head is None:
+            self._head = node
+            self._tail = node
+        else:
+            self._head.prev = node
+            self._head = node
+        self._size += 1
 
     def push_back(self, value) -> None:
-        """Добавить элемент в конец. Сложность: TODO."""
-        # TODO: симметрично push_front для tail
-        raise NotImplementedError
+        node = _Node(value, self._tail, None)
+        if self._tail is None:
+            self._head = node
+            self._tail = node
+        else:
+            self._tail.next = node
+            self._tail = node
+        self._size += 1
 
     def pop_front(self):
-        """Извлечь элемент из начала; для пустого дека — IndexError."""
-        # TODO: учесть переход к пустому деку (tail тоже обнуляется)
-        raise NotImplementedError
+        if self._head is None:
+            raise IndexError("pop_front из пустого дека")
+        value = self._head.value
+        self._head = self._head.next
+        if self._head is None:
+            self._tail = None
+        else:
+            self._head.prev = None
+        self._size -= 1
+        return value
 
     def pop_back(self):
-        """Извлечь элемент из конца; для пустого дека — IndexError."""
-        # TODO: симметрично pop_front (при опустошении обнуляется и head)
-        raise NotImplementedError
+        if self._tail is None:
+            raise IndexError("pop_back из пустого дека")
+        value = self._tail.value
+        self._tail = self._tail.prev
+        if self._tail is None:
+            self._head = None
+        else:
+            self._tail.next = None
+        self._size -= 1
+        return value
 
 
 # ---------------------------------------------------------------------------
